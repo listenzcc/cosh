@@ -1,288 +1,377 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>从 cosh 理解：二项分布的极限是正态分布</title>
-<meta name="description" content="一个交互式演示：从抛硬币的二项分布出发，用双曲余弦 cosh 的矩母函数，直观看到它如何收敛到正态分布。" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>从 cosh 理解：二项分布的极限是正态分布</title>
+    <meta
+      name="description"
+      content="一个交互式演示：从抛硬币的二项分布出发，用双曲余弦 cosh 的矩母函数，直观看到它如何收敛到正态分布。"
+    />
 
-<!-- MathJax：渲染公式 -->
-<script>
-  window.MathJax = {
-    tex: {
-      inlineMath: [['$', '$'], ['\\(', '\\)']],
-      displayMath: [['$$', '$$'], ['\\[', '\\]']]
-    },
-    svg: { fontCache: 'global' }
-  };
-</script>
-<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- MathJax：渲染公式 -->
+    <script>
+      window.MathJax = {
+        tex: {
+          inlineMath: [
+            ["$", "$"],
+            ["\\(", "\\)"],
+          ],
+          displayMath: [
+            ["$$", "$$"],
+            ["\\[", "\\]"],
+          ],
+        },
+        svg: { fontCache: "global" },
+      };
+    </script>
+    <script
+      async
+      src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"
+    ></script>
 
-<link rel="stylesheet" href="assets/css/style.css" />
-</head>
-<body>
-
-<header class="site-header">
-  <div class="container">
-    <p class="kicker">交互式数学演示</p>
-    <h1>从 $\cosh$ 理解<br />二项分布的极限是正态分布</h1>
-    <p class="lede">
-      抛一枚公平硬币 $n$ 次，正面次数服从二项分布。把它的矩母函数中心化后，
-      恰好是 $\cosh$ 的 $n$ 次方。标准化之后，
-      $\bigl[\cosh(t/\sqrt n)\bigr]^n \to e^{t^2/2}$——
-      这正是标准正态分布的矩母函数。下面用可交互的图表，把这条线索走一遍。
-    </p>
-    <p class="hint">提示：每个图表都可以拖动滑块、点击按钮实时变化。</p>
-  </div>
-</header>
-
-<main class="container">
-
-  <!-- ========== 1. 从硬币开始 ========== -->
-  <section id="coins" class="block">
-    <h2>1. 从硬币开始</h2>
-    <p>
-      独立抛掷一枚（可不公平）硬币 $n$ 次，令 $X$ 为正面次数，则
-      $X\sim\operatorname{Bin}(n,p)$。它的概率质量函数是
-      $P(X=k)=\binom nk p^k(1-p)^{n-k}$。
-      当 $n$ 很大时，这个离散分布会越长越像一口钟——也就是正态分布。
-      下面先通过模拟直观感受一下：不断“抛硬币”，把正面次数的直方图叠加上去。
-    </p>
-
-    <div class="panel">
-      <div class="controls">
-        <label>硬币数 $n = $ <span id="coin-n-val" class="val">20</span>
-          <input type="range" id="coin-n" min="2" max="300" step="1" value="20" />
-        </label>
-        <label>正面概率 $p = $ <span id="coin-p-val" class="val">0.50</span>
-          <input type="range" id="coin-p" min="0.05" max="0.95" step="0.01" value="0.5" />
-        </label>
-        <div class="btn-row">
-          <button id="coin-1">抛 1 次</button>
-          <button id="coin-100">抛 100 次</button>
-          <button id="coin-1000">抛 1000 次</button>
-          <button id="coin-reset" class="ghost">重置</button>
-        </div>
-        <p class="readout">已模拟 <span id="coin-count" class="val">0</span> 次试验</p>
-      </div>
-      <div class="canvas-wrap">
-        <canvas id="coin-canvas"></canvas>
-      </div>
-    </div>
-    <p class="note">
-      蓝条是模拟得到的正面次数直方图（已归一化为密度），绿色曲线是理论上的二项分布
-      $\operatorname{Bin}(n,p)$ 的概率质量，红色曲线是按均值 $np$、方差 $np(1-p)$
-      叠加的正态近似。试把 $n$ 调大、$p$ 保持 0.5，会看到蓝条越来越贴合红曲线。
-    </p>
-  </section>
-
-  <!-- ========== 2. 矩母函数引出 cosh ========== -->
-  <section id="mgf" class="block">
-    <h2>2. 矩母函数引出 $\cosh$</h2>
-    <p>
-      研究分布有个趁手的工具叫<strong>矩母函数</strong>：$M_Y(t)=\mathbb E[e^{tY}]$。
-      独立随机变量相加，对应矩母函数相乘。对一次公平硬币试验，结果 $B\in\{0,1\}$，
-      中心化后 $B-\tfrac12\in\{-\tfrac12,\tfrac12\}$，于是
-    </p>
-    <div class="equation">
-      $$ M_{B-1/2}(t)=\tfrac12 e^{-t/2}+\tfrac12 e^{t/2}
-      =\frac{e^{t/2}+e^{-t/2}}{2}=\cosh\frac t2. $$
-    </div>
-    <p>
-      $n$ 次试验相互独立，中心化后的和 $S=\sum(B_i-\tfrac12)$ 的矩母函数就是单次的 $n$ 次方：
-    </p>
-    <div class="equation">
-      $$ M_S(t)=\bigl[\cosh(t/2)\bigr]^n. $$
-    </div>
-    <p class="note">
-      这就是二项分布与 $\cosh$ 之间最直接的联系：<strong>公平硬币的二项分布，中心化之后，
-      矩母函数恰好是 $\cosh$ 的 $n$ 次方</strong>。下面这张图把“两个对称的指数权重之和”
-      画出来——横轴是 $t$，橙色曲线就是单个中心化试验的矩母函数 $\cosh(t/2)$。
-    </p>
-    <div class="panel">
-      <div class="canvas-wrap">
-        <canvas id="single-canvas"></canvas>
-      </div>
-    </div>
-  </section>
-
-  <!-- ========== 3. 标准化之后 ========== -->
-  <section id="standardize" class="block">
-    <h2>3. 标准化之后，正态分布出现</h2>
-    <p>
-      把 $S$ 按标准差标准化：$Z_n=\dfrac{2S}{\sqrt n}$，均值为 0、方差为 1。它的矩母函数是
-    </p>
-    <div class="equation">
-      $$ M_{Z_n}(t)=\mathbb E\!\left[e^{2tS/\sqrt n}\right]
-      =\Bigl[\cosh\!\bigl(\tfrac{t}{\sqrt n}\bigr)\Bigr]^n. $$
-    </div>
-    <p>
-      关键问题变成：当 $n\to\infty$ 时，$\bigl[\cosh(t/\sqrt n)\bigr]^n$ 趋于什么？
-      下面拖动 $n$（或点“播放”），看橙色曲线如何一点点爬升、最终与红色虚线
-      $e^{t^2/2}$（标准正态的矩母函数）重合。
-    </p>
-
-    <div class="panel">
-      <div class="controls">
-        <label>$n = $ <span id="mgf-n-val" class="val">1</span>
-          <input type="range" id="mgf-n" min="1" max="300" step="1" value="1" />
-        </label>
-        <div class="btn-row">
-          <button id="mgf-play">▶ 播放收敛动画</button>
-          <button id="mgf-reset" class="ghost">回到 $n=1$</button>
-        </div>
-        <p class="readout">最大相对误差（$|t|\le 3$）：<span id="mgf-err" class="val">—</span></p>
-      </div>
-      <div class="canvas-wrap">
-        <canvas id="mgf-canvas"></canvas>
-      </div>
-    </div>
-    <p class="note">
-      橙色是 $\bigl[\cosh(t/\sqrt n)\bigr]^n$，红色虚线是极限 $e^{t^2/2}$。
-      $n$ 越大，$t/\sqrt n$ 越小，$\cosh$ 越接近 $1+\tfrac{t^2}{2n}$，
-      整条曲线就越贴近高斯指数形式。这就是中心极限定理在公平硬币情形下的直接推导。
-    </p>
-  </section>
-
-  <!-- ========== 4. 二次项的特殊性 ========== -->
-  <section id="quadratic" class="block">
-    <h2>4. 二次项的特殊性</h2>
-    <p>
-      为什么收敛到的是“二次”指数，而不是别的？看 $\cosh x$ 在 $x=0$ 附近的展开：
-    </p>
-    <div class="equation">
-      $$ \cosh x = 1+\frac{x^2}{2!}+\frac{x^4}{4!}+\cdots,
-      \qquad \ln\cosh x = \frac{x^2}{2}-\frac{x^4}{12}+O(x^6). $$
-    </div>
-    <p>
-      取对数后，主导项是二次项 $\tfrac{x^2}{2}$。把 $n$ 个试验叠加并标准化，对数矩母函数变成
-      $n\ln\cosh(t/\sqrt n)$：二次项乘上 $n$ 后恰好保留为 $\tfrac{t^2}{2}$，
-      而四次项变成 $-t^4/(12n)$，随 $n\to\infty$ 消失。右下图直接画出这条“残差消失”的过程。
-    </p>
-
-    <div class="grid-2">
-      <div class="panel">
-        <h3>$\ln\cosh x$ 与其近似</h3>
-        <div class="canvas-wrap">
-          <canvas id="taylor-canvas"></canvas>
-        </div>
-        <p class="note small">
-          紫色是 $\ln\cosh x$，绿色虚线是它的二次近似 $x^2/2$，橙色是带四次修正的
-          $x^2/2 - x^4/12$。$x$ 越靠近 0，二次近似越准。
+    <link rel="stylesheet" href="assets/css/style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <p class="kicker">交互式数学演示</p>
+        <h1>从 $\cosh$ 理解<br />二项分布的极限是正态分布</h1>
+        <p class="lede">
+          抛一枚公平硬币 $n$ 次，正面次数服从二项分布。把它的矩母函数中心化后，
+          恰好是 $\cosh$ 的 $n$ 次方。标准化之后， $\bigl[\cosh(t/\sqrt
+          n)\bigr]^n \to e^{t^2/2}$——
+          这正是标准正态分布的矩母函数。下面用可交互的图表，把这条线索走一遍。
         </p>
+        <p class="hint">提示：每个图表都可以拖动滑块、点击按钮实时变化。</p>
       </div>
-      <div class="panel">
-        <h3>$n\ln\cosh(t/\sqrt n)$ 收敛到 $t^2/2$</h3>
-        <div class="controls">
-          <label>$n = $ <span id="tay-n-val" class="val">5</span>
-            <input type="range" id="tay-n" min="1" max="300" step="1" value="5" />
-          </label>
-        </div>
-        <div class="canvas-wrap">
-          <canvas id="taylor2-canvas"></canvas>
-        </div>
-        <p class="note small">
-          橙色是 $n\ln\cosh(t/\sqrt n)$，红色虚线是极限 $t^2/2$。
-          两者之差（主要来自 $-t^4/(12n)$）随 $n$ 增大而压平。
+    </header>
+
+    <main class="container">
+      <!-- ========== 1. 从硬币开始 ========== -->
+      <section id="coins" class="block">
+        <h2>1. 从硬币开始</h2>
+        <p>
+          独立抛掷一枚（可不公平）硬币 $n$ 次，令 $X$ 为正面次数，则
+          $X\sim\operatorname{Bin}(n,p)$。它的概率质量函数是 $P(X=k)=\binom nk
+          p^k(1-p)^{n-k}$。 当 $n$
+          很大时，这个离散分布会越长越像一口钟——也就是正态分布。
+          下面先通过模拟直观感受一下：不断“抛硬币”，把正面次数的直方图叠加上去。
         </p>
+
+        <div class="panel">
+          <div class="controls">
+            <label
+              >硬币数 $n = $ <span id="coin-n-val" class="val">20</span>
+              <input
+                type="range"
+                id="coin-n"
+                min="2"
+                max="300"
+                step="1"
+                value="20"
+              />
+            </label>
+            <label
+              >正面概率 $p = $ <span id="coin-p-val" class="val">0.50</span>
+              <input
+                type="range"
+                id="coin-p"
+                min="0.05"
+                max="0.95"
+                step="0.01"
+                value="0.5"
+              />
+            </label>
+            <div class="btn-row">
+              <button id="coin-1">抛 1 次</button>
+              <button id="coin-100">抛 100 次</button>
+              <button id="coin-1000">抛 1000 次</button>
+              <button id="coin-reset" class="ghost">重置</button>
+            </div>
+            <p class="readout">
+              已模拟 <span id="coin-count" class="val">0</span> 次试验
+            </p>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="coin-canvas"></canvas>
+          </div>
+        </div>
+        <p class="note">
+          蓝条是模拟得到的正面次数直方图（已归一化为密度），绿色曲线是理论上的二项分布
+          $\operatorname{Bin}(n,p)$ 的概率质量，红色曲线是按均值 $np$、方差
+          $np(1-p)$ 叠加的正态近似。试把 $n$ 调大、$p$ 保持
+          0.5，会看到蓝条越来越贴合红曲线。
+        </p>
+      </section>
+
+      <!-- ========== 2. 矩母函数引出 cosh ========== -->
+      <section id="mgf" class="block">
+        <h2>2. 矩母函数引出 $\cosh$</h2>
+        <p>
+          研究分布有个趁手的工具叫<strong>矩母函数</strong>：$M_Y(t)=\mathbb
+          E[e^{tY}]$。
+          独立随机变量相加，对应矩母函数相乘。对一次公平硬币试验，结果
+          $B\in\{0,1\}$， 中心化后 $B-\tfrac12\in\{-\tfrac12,\tfrac12\}$，于是
+        </p>
+        <div class="equation">
+          $$ M_{B-1/2}(t)=\tfrac12 e^{-t/2}+\tfrac12 e^{t/2}
+          =\frac{e^{t/2}+e^{-t/2}}{2}=\cosh\frac t2. $$
+        </div>
+        <p>
+          $n$ 次试验相互独立，中心化后的和 $S=\sum(B_i-\tfrac12)$
+          的矩母函数就是单次的 $n$ 次方：
+        </p>
+        <div class="equation">$$ M_S(t)=\bigl[\cosh(t/2)\bigr]^n. $$</div>
+        <p class="note">
+          这就是二项分布与 $\cosh$ 之间最直接的联系：<strong
+            >公平硬币的二项分布，中心化之后， 矩母函数恰好是 $\cosh$ 的 $n$
+            次方</strong
+          >。下面这张图把“两个对称的指数权重之和” 画出来——横轴是
+          $t$，橙色曲线就是单个中心化试验的矩母函数 $\cosh(t/2)$。
+        </p>
+        <div class="panel">
+          <div class="canvas-wrap">
+            <canvas id="single-canvas"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== 3. 标准化之后 ========== -->
+      <section id="standardize" class="block">
+        <h2>3. 标准化之后，正态分布出现</h2>
+        <p>
+          把 $S$ 按标准差标准化：$Z_n=\dfrac{2S}{\sqrt n}$，均值为 0、方差为
+          1。它的矩母函数是
+        </p>
+        <div class="equation">
+          $$ M_{Z_n}(t)=\mathbb E\!\left[e^{2tS/\sqrt n}\right]
+          =\Bigl[\cosh\!\bigl(\tfrac{t}{\sqrt n}\bigr)\Bigr]^n. $$
+        </div>
+        <p>
+          关键问题变成：当 $n\to\infty$ 时，$\bigl[\cosh(t/\sqrt n)\bigr]^n$
+          趋于什么？ 下面拖动
+          $n$（或点“播放”），看橙色曲线如何一点点爬升、最终与红色虚线
+          $e^{t^2/2}$（标准正态的矩母函数）重合。
+        </p>
+
+        <div class="panel">
+          <div class="controls">
+            <label
+              >$n = $ <span id="mgf-n-val" class="val">1</span>
+              <input
+                type="range"
+                id="mgf-n"
+                min="1"
+                max="300"
+                step="1"
+                value="1"
+              />
+            </label>
+            <div class="btn-row">
+              <button id="mgf-play">▶ 播放收敛动画</button>
+              <button id="mgf-reset" class="ghost">回到 $n=1$</button>
+            </div>
+            <p class="readout">
+              最大相对误差（$|t|\le 3$）：<span id="mgf-err" class="val"
+                >—</span
+              >
+            </p>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="mgf-canvas"></canvas>
+          </div>
+        </div>
+        <p class="note">
+          橙色是 $\bigl[\cosh(t/\sqrt n)\bigr]^n$，红色虚线是极限 $e^{t^2/2}$。
+          $n$ 越大，$t/\sqrt n$ 越小，$\cosh$ 越接近 $1+\tfrac{t^2}{2n}$，
+          整条曲线就越贴近高斯指数形式。这就是中心极限定理在公平硬币情形下的直接推导。
+        </p>
+      </section>
+
+      <!-- ========== 4. 二次项的特殊性 ========== -->
+      <section id="quadratic" class="block">
+        <h2>4. 二次项的特殊性</h2>
+        <p>
+          为什么收敛到的是“二次”指数，而不是别的？看 $\cosh x$ 在 $x=0$
+          附近的展开：
+        </p>
+        <div class="equation">
+          $$ \cosh x = 1+\frac{x^2}{2!}+\frac{x^4}{4!}+\cdots, \qquad \ln\cosh x
+          = \frac{x^2}{2}-\frac{x^4}{12}+O(x^6). $$
+        </div>
+        <p>
+          取对数后，主导项是二次项 $\tfrac{x^2}{2}$。把 $n$
+          个试验叠加并标准化，对数矩母函数变成 $n\ln\cosh(t/\sqrt
+          n)$：二次项乘上 $n$ 后恰好保留为 $\tfrac{t^2}{2}$， 而四次项变成
+          $-t^4/(12n)$，随 $n\to\infty$
+          消失。右下图直接画出这条“残差消失”的过程。
+        </p>
+
+        <div class="grid-2">
+          <div class="panel">
+            <h3>$\ln\cosh x$ 与其近似</h3>
+            <div class="canvas-wrap">
+              <canvas id="taylor-canvas"></canvas>
+            </div>
+            <p class="note small">
+              紫色是 $\ln\cosh x$，绿色虚线是它的二次近似
+              $x^2/2$，橙色是带四次修正的 $x^2/2 - x^4/12$。$x$ 越靠近
+              0，二次近似越准。
+            </p>
+          </div>
+          <div class="panel">
+            <h3>$n\ln\cosh(t/\sqrt n)$ 收敛到 $t^2/2$</h3>
+            <div class="controls">
+              <label
+                >$n = $ <span id="tay-n-val" class="val">5</span>
+                <input
+                  type="range"
+                  id="tay-n"
+                  min="1"
+                  max="300"
+                  step="1"
+                  value="5"
+                />
+              </label>
+            </div>
+            <div class="canvas-wrap">
+              <canvas id="taylor2-canvas"></canvas>
+            </div>
+            <p class="note small">
+              橙色是 $n\ln\cosh(t/\sqrt n)$，红色虚线是极限 $t^2/2$。
+              两者之差（主要来自 $-t^4/(12n)$）随 $n$ 增大而压平。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== 5. 悬链线 ========== -->
+      <section id="catenary" class="block">
+        <h2>5. 这与悬链线中的 $\cosh$ 有什么关系？</h2>
+        <p>
+          两端固定、自然下垂的链子形成<strong>悬链线</strong> $y=a\cosh(x/a)$。
+          二项分布里的 $\cosh$ 来自对称概率取值的矩母函数，悬链线里的 $\cosh$
+          来自势能最小化——
+          来源不同，但<strong>共享同一个数学结构：把正、负两个方向的指数函数对称地组合起来</strong>。
+          下面调节 $a$，并拆开看 $\cosh(x/a)=\tfrac12 e^{x/a}+\tfrac12 e^{-x/a}$
+          的两支。
+        </p>
+
+        <div class="panel">
+          <div class="controls">
+            <label
+              >悬链线参数 $a = $ <span id="cat-a-val" class="val">1.0</span>
+              <input
+                type="range"
+                id="cat-a"
+                min="0.5"
+                max="3"
+                step="0.05"
+                value="1"
+              />
+            </label>
+            <label class="check">
+              <input type="checkbox" id="cat-split" checked /> 显示两支指数
+              $e^{\pm x/a}/2$
+            </label>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="cat-canvas"></canvas>
+          </div>
+        </div>
+        <p class="note">
+          实线是 $a\cosh(x/a)$，两条虚线分别是 $\tfrac12 e^{x/a}$ 与 $\tfrac12
+          e^{-x/a}$。 它们对称相加正好得到
+          $\cosh$。这正是二项分布与悬链线之间“看得见的”共同骨架——
+          而非它们长得更像，或满足同样的微分方程。
+        </p>
+      </section>
+
+      <!-- ========== 6. 更一般的情况 ========== -->
+      <section id="general" class="block">
+        <h2>6. 更一般的情况：为什么不只是公平硬币？</h2>
+        <p>
+          $\cosh$ 是 $p=\tfrac12$ 时最直观的入口。对一般的成功概率
+          $p$，单次中心化试验的矩母函数是
+        </p>
+        <div class="equation">$$ M_{B-p}(t)=(1-p)e^{-pt}+p\,e^{(1-p)t}, $$</div>
+        <p>
+          只有当 $p=\tfrac12$ 时才化为 $\cosh(t/2)$。但无论 $p$ 取何值，在 $t=0$
+          附近都有 $\ln M_{B-p}(t)=\tfrac{p(1-p)}{2}t^2+O(t^3)$；叠加 $n$
+          次再标准化，二次项仍趋于 $\tfrac{t^2}{2}$，于是同样得到
+          $\dfrac{X-np}{\sqrt{np(1-p)}}\xrightarrow{d}N(0,1)$。 下面调 $p$ 和
+          $n$，看橙色曲线（一般情形的标准化矩母函数）依旧收敛到红色虚线。
+        </p>
+
+        <div class="panel">
+          <div class="controls">
+            <label
+              >成功概率 $p = $ <span id="gen-p-val" class="val">0.30</span>
+              <input
+                type="range"
+                id="gen-p"
+                min="0.05"
+                max="0.95"
+                step="0.01"
+                value="0.3"
+              />
+            </label>
+            <label
+              >$n = $ <span id="gen-n-val" class="val">50</span>
+              <input
+                type="range"
+                id="gen-n"
+                min="1"
+                max="300"
+                step="1"
+                value="50"
+              />
+            </label>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="gen-canvas"></canvas>
+          </div>
+        </div>
+        <p class="note">
+          注意当 $p\neq\tfrac12$ 时，橙色曲线并不是简单的 $\cosh$
+          形式，但它依然向 $e^{t^2/2}$
+          收敛。这说明中心极限定理的普遍性：只要独立、同分布、方差有限，
+          二次近似就会在极限中胜出。
+        </p>
+      </section>
+
+      <!-- ========== 小结 ========== -->
+      <section id="summary" class="block summary">
+        <h2>小结</h2>
+        <p class="note">
+          从悬链线到二项分布，再到正态分布，一条清晰的数学线索是：
+          <strong
+            >对称的指数结构，在大量独立叠加与适当标准化之后，会通过二阶近似自然地产生高斯结构。</strong
+          >
+        </p>
+        <div class="equation">
+          $$ \boxed{\Bigl[\cosh\!\bigl(\tfrac{t}{\sqrt n}\bigr)\Bigr]^n
+          \longrightarrow e^{t^2/2}} $$
+        </div>
+        <p class="note">
+          左侧是二项分布（标准化后）的矩母函数，右侧是标准正态的矩母函数。$\cosh$
+          在这里
+          不只是一个悬链线里的双曲函数，它还是一座从“对称指数组合”通向“高斯指数形式”的桥。
+        </p>
+        <p class="note">
+          本页公式与推导整理自《从 cosh 理解二项分布的极限分布是正态分布》。
+          所有图表均为浏览器内实时计算，无外部数据依赖。
+        </p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <p>交互式演示 · 纯静态站点，可直接部署到 GitHub Pages。</p>
       </div>
-    </div>
-  </section>
+    </footer>
 
-  <!-- ========== 5. 悬链线 ========== -->
-  <section id="catenary" class="block">
-    <h2>5. 这与悬链线中的 $\cosh$ 有什么关系？</h2>
-    <p>
-      两端固定、自然下垂的链子形成<strong>悬链线</strong> $y=a\cosh(x/a)$。
-      二项分布里的 $\cosh$ 来自对称概率取值的矩母函数，悬链线里的 $\cosh$ 来自势能最小化——
-      来源不同，但<strong>共享同一个数学结构：把正、负两个方向的指数函数对称地组合起来</strong>。
-      下面调节 $a$，并拆开看 $\cosh(x/a)=\tfrac12 e^{x/a}+\tfrac12 e^{-x/a}$ 的两支。
-    </p>
-
-    <div class="panel">
-      <div class="controls">
-        <label>悬链线参数 $a = $ <span id="cat-a-val" class="val">1.0</span>
-          <input type="range" id="cat-a" min="0.5" max="3" step="0.05" value="1" />
-        </label>
-        <label class="check">
-          <input type="checkbox" id="cat-split" checked /> 显示两支指数 $e^{\pm x/a}/2$
-        </label>
-      </div>
-      <div class="canvas-wrap">
-        <canvas id="cat-canvas"></canvas>
-      </div>
-    </div>
-    <p class="note">
-      实线是 $a\cosh(x/a)$，两条虚线分别是 $\tfrac12 e^{x/a}$ 与 $\tfrac12 e^{-x/a}$。
-      它们对称相加正好得到 $\cosh$。这正是二项分布与悬链线之间“看得见的”共同骨架——
-      而非它们长得更像，或满足同样的微分方程。
-    </p>
-  </section>
-
-  <!-- ========== 6. 更一般的情况 ========== -->
-  <section id="general" class="block">
-    <h2>6. 更一般的情况：为什么不只是公平硬币？</h2>
-    <p>
-      $\cosh$ 是 $p=\tfrac12$ 时最直观的入口。对一般的成功概率 $p$，单次中心化试验的矩母函数是
-    </p>
-    <div class="equation">
-      $$ M_{B-p}(t)=(1-p)e^{-pt}+p\,e^{(1-p)t}, $$
-    </div>
-    <p>
-      只有当 $p=\tfrac12$ 时才化为 $\cosh(t/2)$。但无论 $p$ 取何值，在 $t=0$ 附近都有
-      $\ln M_{B-p}(t)=\tfrac{p(1-p)}{2}t^2+O(t^3)$；叠加 $n$ 次再标准化，二次项仍趋于
-      $\tfrac{t^2}{2}$，于是同样得到 $\dfrac{X-np}{\sqrt{np(1-p)}}\xrightarrow{d}N(0,1)$。
-      下面调 $p$ 和 $n$，看橙色曲线（一般情形的标准化矩母函数）依旧收敛到红色虚线。
-    </p>
-
-    <div class="panel">
-      <div class="controls">
-        <label>成功概率 $p = $ <span id="gen-p-val" class="val">0.30</span>
-          <input type="range" id="gen-p" min="0.05" max="0.95" step="0.01" value="0.3" />
-        </label>
-        <label>$n = $ <span id="gen-n-val" class="val">50</span>
-          <input type="range" id="gen-n" min="1" max="300" step="1" value="50" />
-        </label>
-      </div>
-      <div class="canvas-wrap">
-        <canvas id="gen-canvas"></canvas>
-      </div>
-    </div>
-    <p class="note">
-      注意当 $p\neq\tfrac12$ 时，橙色曲线并不是简单的 $\cosh$ 形式，但它依然向
-      $e^{t^2/2}$ 收敛。这说明中心极限定理的普遍性：只要独立、同分布、方差有限，
-      二次近似就会在极限中胜出。
-    </p>
-  </section>
-
-  <!-- ========== 小结 ========== -->
-  <section id="summary" class="block summary">
-    <h2>小结</h2>
-    <p>
-      从悬链线到二项分布，再到正态分布，一条清晰的数学线索是：
-      <strong>对称的指数结构，在大量独立叠加与适当标准化之后，会通过二阶近似自然地产生高斯结构。</strong>
-    </p>
-    <div class="equation">
-      $$ \boxed{\Bigl[\cosh\!\bigl(\tfrac{t}{\sqrt n}\bigr)\Bigr]^n \longrightarrow e^{t^2/2}} $$
-    </div>
-    <p>
-      左侧是二项分布（标准化后）的矩母函数，右侧是标准正态的矩母函数。$\cosh$ 在这里
-      不只是一个悬链线里的双曲函数，它还是一座从“对称指数组合”通向“高斯指数形式”的桥。
-    </p>
-    <p class="note">
-      本页公式与推导整理自《从 cosh 理解二项分布的极限分布是正态分布》。
-      所有图表均为浏览器内实时计算，无外部数据依赖。
-    </p>
-  </section>
-
-</main>
-
-<footer class="site-footer">
-  <div class="container">
-    <p>交互式演示 · 纯静态站点，可直接部署到 GitHub Pages。</p>
-  </div>
-</footer>
-
-<script src="assets/js/app.js"></script>
-</body>
+    <script src="assets/js/app.js"></script>
+  </body>
 </html>
