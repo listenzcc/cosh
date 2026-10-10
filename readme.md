@@ -4,6 +4,8 @@
 从抛硬币的二项分布出发，用双曲余弦 $\cosh$ 的矩母函数，直观看到标准化后
 $\bigl[\cosh(t/\sqrt n)\bigr]^n \to e^{t^2/2}$（标准正态的矩母函数）。
 
+Page: <https://listenzcc.github.io/cosh/>
+
 ## 内容模块
 
 1. 抛硬币模拟：二项分布直方图 + 理论 PMF + 正态近似
